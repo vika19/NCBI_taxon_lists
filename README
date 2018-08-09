@@ -1,0 +1,79 @@
+Project: Annotation of Transcriptomes
+
+Creator: Sheri Sanders, 2015
+
+Purpose: These files are the Uniprot lists for different taxa.  This allows
+for the removal of contaminants (plant, bacteria, etc) based on the blast hit
+to uniprot database.  Also useful to count hits by taxa (amphibians, vert, etc).
+
+Useful Code:
+## FIND ALL THE CODES THAT ARE ATTRIBUTED TO THE GROUPS ###
+
+declare REPORT=PATH/TO/XLS
+grep -f ../ArcCode.list <(awk '{print $2,$6,$8,$9}' $REPORT) | grep -v "Eukary" > ArcHitsp.xls
+grep -f ../ArcCode.list <(awk '{print $2,$6,$3,$4}' $REPORT) | grep -v "Eukary" > ArcHitsn.xls
+grep -f ../BacCode.list <(awk '{print $2,$6,$8,$9}' $REPORT) | grep -v "Eukary" > BacHitsp.xls
+grep -f ../BacCode.list <(awk '{print $2,$6,$3,$4}' $REPORT) | grep -v "Eukary" > BacHitsn.xls
+grep -f ../VirusCode.list <(awk '{print $2,$6,$8,$9}' $REPORT) | grep -v "Eukary" > VirusHitsp.xls
+grep -f ../VirusCode.list <(awk '{print $2,$6,$3,$4}' $REPORT) | grep -v "Eukary" > VirusHitsn.xls
+grep -f ../PlantCode.list <(awk '{print $2,$6,$8,$9}' $REPORT) | grep -v "Vertebra" > PlantHitsp.xls
+grep -f ../PlantCode.list <(awk '{print $2,$6,$3,$4}' $REPORT) | grep -v "Vertebra" > PlantHitsn.xls
+grep -f ../FungiCode.list <(awk '{print $2,$6,$8,$9}' $REPORT) | grep "_Fungi" > FungusHitsp.xls
+grep -f ../FungiCode.list <(awk '{print $2,$6,$3,$4}' $REPORT) | grep "_Fungi" > FungusHitsn.xls
+grep -f ../FrogCode.list <(awk '{print $2,$6,$8,$9}' $REPORT) > FrogHitsp.xls                            
+grep -f ../FrogCode.list <(awk '{print $2,$6,$3,$4}' $REPORT) > FrogHitsn.xls
+grep -f ../SalCode.list <(awk '{print $2,$6,$8,$9}' $REPORT) > SalHitsp.xls
+grep -f ../SalCode.list <(awk '{print $2,$6,$3,$4}' $REPORT) > SalHitsn.xls
+
+grep "_Amphibia" <(awk '{print $2,$6,$8,$9}' $REPORT) > AmphibHitsp.xls
+grep "_Amphibia" <(awk '{print $2,$6,$3,$4}' $REPORT) > AmphibHitsn.xls
+
+grep -f ../NonredundantVertCode.list <(awk '{print $2,$6,$8,$9}' $REPORT) > VertHitsp.xls
+grep -f ../NonredundantVertCode.list <(awk '{print $2,$6,$3,$4}' $REPORT) > VertHitsn.xls                
+grep -f ../NonredundantEukCode.list <(awk '{print $2,$6,$8,$9}' $REPORT) > EukHitsp.xls
+grep -f ../NonredundantEukCode.list <(awk '{print $2,$6,$3,$4}' $REPORT) > EukHitsn.xls
+
+
+## FIND ALL THE PROTIENS THAT ARE FOUND IN BOTH N AND P ##
+comm -1 -2 <(awk '{print $1}' AmphibHitsn.xls| sort) <(awk '{print $2}' AmphibHitsp.xls| sort) > AmphibHits.commonnp.list
+comm -1 -2 <(awk '{print $2}' ArcHitsn.xls| sort) <(awk '{print $2}' ArcHitsp.xls| sort) > ArcHits.commonnp.list
+comm -1 -2 <(awk '{print $2}' BacHitsn.xls| sort) <(awk '{print $2}' BacHitsp.xls| sort) > BacHits.commonnp.list
+comm -1 -2 <(awk '{print $2}' EukHitsn.xls| sort) <(awk '{print $2}' EukHitsp.xls| sort) > EukHits.commonnp.list
+comm -1 -2 <(awk '{print $2}' FrogHitsn.xls| sort) <(awk '{print $2}' FrogHitsp.xls| sort) > FrogHits.commonnp.list
+comm -1 -2 <(awk '{print $2}' FungusHitsn.xls| sort) <(awk '{print $2}' FungusHitsp.xls| sort) > FungusHits.commonnp.list
+comm -1 -2 <(awk '{print $2}' PlantHitsn.xls| sort) <(awk '{print $2}' PlantHitsp.xls| sort) > PlantHits.commonnp.list
+comm -1 -2 <(awk '{print $2}' SalHitsn.xls| sort) <(awk '{print $2}' SalHitsp.xls| sort) > SalHits.commonnp.list
+comm -1 -2 <(awk '{print $2}' VertHitsn.xls| sort) <(awk '{print $2}' VertHitsp.xls| sort) > VertHits.commonnp.list
+comm -1 -2 <(awk '{print $2}' VirusHitsn.xls| sort) <(awk '{print $2}' VirusHitsp.xls| sort) > VirusHits.commonnp.list
+
+## REMOVE POSSIBLE CONTAMINANTS ##
+cat ArcHits.commonnp.list >> removal.list
+cat BacHits.commonnp.list >> removal.list
+grep -f FungusHits.commonnp.list FungusHitsn.xls | grep -i -v "transposon" | awk '{print $2}' >> removal.list
+cat PlantHits.commonnp.list >> removal.list
+grep -f VirusHits.commonnp.list VirusHitsn.xls | grep -i -v "retro" | awk '{print $2}' >> removal.list
+less FungusHitsn.xls | grep -i -v "transposon" | awk '{print $2}' >> posremoval.list
+less FungusHitsp.xls | grep -i -v "transposon" | awk '{print $2}' >> posremoval.list
+less VirusHitsn.xls | grep -i -v "retro" | awk '{print $2}' >> posremoval.list
+less VirusHitsp.xls | grep -i -v "retro" | awk '{print $2}' >> posremoval.list
+less ArcHitsn.xls | awk '{print $2}' >> removal.list
+less ArcHitsp.xls | awk '{print $2}' >> removal.list
+less BacHitsp.xls | awk '{print $2}' >> removal.list
+less BacHitsn.xls | awk '{print $2}' >> removal.list
+less PlantHitsn.xls | awk '{print $2}' >> removal.list
+less PlantHitsp.xls | awk '{print $2}' >> removal.list
+
+sort removal.list | uniq > tmp
+mv tmp removal.list
+
+## ID more retroelements ##
+egrep -i "\|ENV" VirusHitsn.xls >> Env.xls
+egrep -i "\|ENV" VirusHitsp.xls >> Env.xls
+egrep -i "\|POL" VirusHitsn.xls >> Pol.xls
+egrep -i "\|POL" VirusHitsp.xls >> Pol.xls
+egrep -i "\|GAG" VirusHitsn.xls >> Gag.xls
+egrep -i "\|GAG" VirusHitsp.xls >> Gag.xls
+
+cat Env.xls Pol.xls > tmp
+cat tmp Gag.xls > retroelements.xls
+rm tmp
